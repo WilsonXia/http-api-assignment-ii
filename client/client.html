@@ -1,13 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
-  
-  <script>
 
+  <script>
+    const handleFetchResponse = async (response, method) => {
+      const content = document.querySelector('#content');
+      switch (response.status) {
+        case 200:
+          content.innerHTML = '<b>Success</b>';
+          break;
+        case 201:
+          content.innerHTML = '<b>New User Created</b>';
+          break;
+        case 204:
+          content.innerHTML = '<b>User Info Updated</b>';
+          break;
+        case 400:
+          content.innerHTML = '<b>Invalid Form Submission</b>';
+          break;
+        case 404:
+          content.innerHTML = '<b>Not Found</b>';
+          break;
+        default:
+          content.innerHTML = '<b>Response Code Not Implemented</b>';
+          break;
+      }
+      
+      if (method.toUpperCase() !== 'HEAD') {
+        let resObj = await response.json();
+        console.log(resObj);
+        if (resObj.users) {
+          content.innerHTML += `<p>${JSON.stringify(resObj.users)}</p>`;
+        } else if (resObj.message) {
+          content.innerHTML += `<p>${resObj.message}</p>`;
+        }
+      }
+    }
+
+    const sendFetch = async (url, method, data) => {
+      const options = {
+        method: method,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: data,
+      }
+      let response = await fetch(url, options);
+      handleFetchResponse(response, method);
+    }
+
+    const init = () => {
+      const addUserForm = document.querySelector("#nameForm");
+      const getUserForm = document.querySelector("#userForm");
+      // Inputs for Add User
+      const nameInput = document.querySelector("#nameField");
+      const ageInput = document.querySelector("#ageField");
+      // Inputs for Get User
+      const urlSelect = document.querySelector("#urlField");
+      const methodSelect = document.querySelector("#methodSelect");
+
+      addUserForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = `name=${nameInput.value}&age=${ageInput.value}`;
+        sendFetch(addUserForm.action, addUserForm.method, formData);
+        return false;
+      });
+
+      getUserForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        sendFetch(urlSelect.value, methodSelect.value);
+        return false;
+      });
+    }
+    window.onload = init;
   </script>
+
 </head>
+
 <body>
   <section id="top">
     <h3>POST Status Code Tests</h3>
@@ -15,7 +88,7 @@
       <label for="name">Name: </label>
       <input id="nameField" type="text" name="name" />
       <label for="age">Age: </label>
-      <input id="ageField" type="number" name="age" min="0" max="100" step="1"/>
+      <input id="ageField" type="number" name="age" min="0" max="100" step="1" />
       <input type="submit" value="Add User" />
     </form>
     <form id="userForm" action="/getUsers" method="get">
@@ -33,4 +106,5 @@
   <section id="content">
   </section>
 </body>
+
 </html>
